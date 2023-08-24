@@ -71,6 +71,27 @@ def worker():
         seed = seed % max_seed
 
         all_steps = steps * image_number
+        
+        if IS_WANDB_INSTALLED:
+            config_dict = {
+                "Prompt": prompt,
+                "Negative Prompt": negative_prompt,
+                "Style": style_selction,
+                "Performance": performance_selction,
+                "Resolution": (width, height),
+                "Number of Images": image_number,
+                "Number of Steps": steps,
+                "Image Seed": image_seed,
+                "Seed": seed,
+                "Sharpness": sharpness,
+                "Base Model": base_model_name,
+                "Refiner Model": refiner_model_name,
+                "LoRA Weights": {},
+            }
+            for n, w in loras:
+                if n != 'None':
+                    config_dict["LoRA Weights"][f"LoRA [{n}] Weight"] = w
+            wandb.init(job_type="text-to-image", config=config_dict)
 
         def callback(step, x0, x, total_steps, y):
             done_steps = i * steps + step
@@ -79,7 +100,9 @@ def worker():
                 f'Step {step}/{total_steps} in the {i}-th Sampling',
                 y)])
         
-        table = wandb.Table(columns=["Prompt", "Negative Prompt", "Image"]) if IS_WANDB_INSTALLED else None
+        wandb_table = None
+        if IS_WANDB_INSTALLED:
+            wandb_table = wandb.Table(columns=["Prompt", "Negative Prompt", "Image"])
 
         for i in range(image_number):
             imgs = pipeline.process(p_txt, n_txt, steps, switch, width, height, seed, callback=callback)
@@ -100,9 +123,9 @@ def worker():
                     if n != 'None':
                         d.append((f'LoRA [{n}] weight', w))
                 log(x, d)
-                print(d)
+                
                 if IS_WANDB_INSTALLED:
-                    log_to_wandb(x, d, table)
+                    wandb_table = log_to_wandb(x, d, wandb_table)
 
             seed += 1
             results += imgs
@@ -110,8 +133,9 @@ def worker():
         outputs.append(['results', results])
         
         if IS_WANDB_INSTALLED:
-            wandb.log({"Generation-Table": table})
-        
+            wandb.log({"Generation-Table": wandb_table})
+            wandb.finish()
+
         return
 
     while True:

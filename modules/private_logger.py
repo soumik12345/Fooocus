@@ -47,8 +47,7 @@ def log(img, dic):
 
 def log_to_wandb(image, configs, table):
     configs = {cfg[0]: cfg[1] for cfg in configs}
-    if wandb.config != {}:
-        wandb.config = configs
     image = wandb.Image(Image.fromarray(image))
     table.add_data(configs["Prompt"], configs["Negative Prompt"], image)
     wandb.log({"Generated-Images": image})
+    return table

@@ -20,8 +20,6 @@ except:
 
 
 def generate_clicked(*args):
-    if IS_WANDB_INSTALLED:
-        wandb.init(job_type="text-to-image")
     yield gr.update(interactive=False), \
         gr.update(visible=True, value=modules.html.make_progress_html(1, 'Processing text encoding ...')), \
         gr.update(visible=True, value=None), \
@@ -46,11 +44,19 @@ def generate_clicked(*args):
                     gr.update(visible=False), \
                     gr.update(visible=True, value=product)
                 finished = True
-
-    if IS_WANDB_INSTALLED:
-        if wandb.run is not None:
-            wandb.finish()
     return
+
+
+def refresh_history():
+    api = wandb.Api()
+    project = os.environ["WANDB_PROJECT"]
+    entity = os.environ["WANDB_ENTITY"]
+    runs = api.runs(f"{entity}/{project}")
+    runs = [run for run in runs if run.state == "finished" and run.job_type == "text-to-image"]
+    for run in runs:
+        with gr.Row():
+            run_url = f"https://wandb.ai/{entity}/{project}/runs/{run.id}"
+            gr.HTML(f"<a href=\"{run_url}\">{run.name}</a>")
 
 
 shared.gradio_root = gr.Blocks(title='Fooocus ' + fooocus_version.version, css=modules.html.css).queue()
@@ -119,17 +125,8 @@ with shared.gradio_root:
                 model_refresh.click(model_refresh_clicked, [], [base_model, refiner_model] + lora_ctrls)
             
             if IS_WANDB_INSTALLED:
-                with gr.Tab(label="History"):
-                    api = wandb.Api()
-                    project = os.environ["WANDB_PROJECT"]
-                    entity = os.environ["WANDB_ENTITY"]
-                    runs = api.runs(f"{entity}/{project}")
-                    runs = [run for run in runs if run.state == "finished" and run.job_type == "text-to-image"]
-                    for run in runs:
-                        with gr.Row():
-                            run_url = f"https://wandb.ai/{entity}/{project}/runs/{run.id}"
-                            gr.HTML(f"<a href=\"{run_url}\">{run.name}</a>")
-                    
+                with gr.Tab(label="History") as history_tab:
+                    refresh_history()
 
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, right_col)
         ctrls = [
