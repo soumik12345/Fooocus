@@ -12,6 +12,7 @@ from modules.sdxl_styles import style_keys, aspect_ratios
 
 IS_WANDB_INSTALLED = False
 try:
+    import os
     import wandb
     IS_WANDB_INSTALLED = True
 except:
@@ -20,7 +21,7 @@ except:
 
 def generate_clicked(*args):
     if IS_WANDB_INSTALLED:
-        wandb.init()
+        wandb.init(job_type="text-to-image")
     yield gr.update(interactive=False), \
         gr.update(visible=True, value=modules.html.make_progress_html(1, 'Processing text encoding ...')), \
         gr.update(visible=True, value=None), \
@@ -116,6 +117,19 @@ with shared.gradio_root:
                     return results
 
                 model_refresh.click(model_refresh_clicked, [], [base_model, refiner_model] + lora_ctrls)
+            
+            if IS_WANDB_INSTALLED:
+                with gr.Tab(label="History"):
+                    api = wandb.Api()
+                    project = os.environ["WANDB_PROJECT"]
+                    entity = os.environ["WANDB_ENTITY"]
+                    runs = api.runs(f"{entity}/{project}")
+                    runs = [run for run in runs if run.state == "finished" and run.job_type == "text-to-image"]
+                    for run in runs:
+                        with gr.Row():
+                            run_url = f"https://wandb.ai/{entity}/{project}/runs/{run.id}"
+                            gr.HTML(f"<a href=\"{run_url}\">{run.name}</a>")
+                    
 
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, right_col)
         ctrls = [
