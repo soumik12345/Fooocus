@@ -10,8 +10,17 @@ import modules.async_worker as worker
 
 from modules.sdxl_styles import style_keys, aspect_ratios
 
+IS_WANDB_INSTALLED = False
+try:
+    import wandb
+    IS_WANDB_INSTALLED = True
+except:
+    IS_WANDB_INSTALLED = False
+
 
 def generate_clicked(*args):
+    if IS_WANDB_INSTALLED:
+        wandb.init()
     yield gr.update(interactive=False), \
         gr.update(visible=True, value=modules.html.make_progress_html(1, 'Processing text encoding ...')), \
         gr.update(visible=True, value=None), \
@@ -36,6 +45,10 @@ def generate_clicked(*args):
                     gr.update(visible=False), \
                     gr.update(visible=True, value=product)
                 finished = True
+
+    if IS_WANDB_INSTALLED:
+        if wandb.run is not None:
+            wandb.finish()
     return
 
 

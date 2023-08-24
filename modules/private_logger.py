@@ -5,6 +5,14 @@ from PIL import Image
 from modules.util import generate_temp_filename
 
 
+IS_WANDB_INSTALLED = False
+try:
+    import wandb
+    IS_WANDB_INSTALLED = True
+except:
+    IS_WANDB_INSTALLED = False
+
+
 def log(img, dic):
     date_string, local_temp_filename, only_name = generate_temp_filename(folder=modules.path.temp_outputs_path, extension='png')
     os.makedirs(os.path.dirname(local_temp_filename), exist_ok=True)
@@ -35,3 +43,12 @@ def log(img, dic):
     print(f'Image generated with private log at: {html_name}')
 
     return
+
+
+def log_to_wandb(image, configs, table):
+    configs = {cfg[0]: cfg[1] for cfg in configs}
+    if wandb.config != {}:
+        wandb.config = configs
+    image = wandb.Image(Image.fromarray(image))
+    table.add_data(configs["Prompt"], configs["Negative Prompt"], image)
+    wandb.log({"Generated-Images": image})
