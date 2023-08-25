@@ -136,6 +136,8 @@ with shared.gradio_root:
                         choices=[run.name for run in runs] if runs is not None else [],
                         label="Past Experiments"
                     )
+                    wandb_refresh_button = gr.Button(label='Refresh History', value='\U0001f504 Refresh History')
+                    
                     history_details = gr.Markdown()
                     
                     def update_history_details(run_name):
@@ -173,8 +175,8 @@ with shared.gradio_root:
                         )
                         
                     
-                    wandb_run_dropdown.change(fn=update_history_details, inputs=wandb_run_dropdown, outputs=history_details)\
-                        .then(fn=update_wandb_dropdown, outputs=wandb_run_dropdown)
+                    wandb_run_dropdown.change(fn=update_history_details, inputs=wandb_run_dropdown, outputs=history_details)
+                    wandb_refresh_button.click(fn=update_wandb_dropdown, outputs=wandb_run_dropdown)
         
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, right_col)
         ctrls = [
