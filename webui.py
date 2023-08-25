@@ -145,18 +145,21 @@ with shared.gradio_root:
                                 selected_run = run
                                 break
                         content = f"### Experiment: [{run_name}](https://wandb.ai/{entity}/{project}/{run_name_to_id[run_name]}) ({str(selected_run.created_at)})"
-                        content += f"\n\n **Prompt:** {selected_run.config['Prompt']}"
-                        if selected_run.config['Negative Prompt'] != "":
-                            content += f"\n\n **Negative Prompt:** {selected_run.config['Negative Prompt']}"
-                        content += f"\n\n **Performance:** {selected_run.config['Performance']}"
-                        content += f"\n\n **Image Seed:** {selected_run.config['Image Seed']}"
-                        content += f"\n\n **Resolution:** {selected_run.config['Resolution']['width']}x{selected_run.config['Resolution']['height']}"
-                        content += f"\n\n **Style:** {selected_run.config['Style']}"
-                        content += f"\n\n **Sharpness:** {selected_run.config['Sharpness']}"
-                        content += f"\n\n **Number of Images:** {selected_run.config['Number of Images']}"
-                        content += f"\n\n **Number of Steps:** {selected_run.config['Number of Steps']}"
-                        content += f"\n\n **Base Model:** {selected_run.config['Base Model']}"
-                        content += f"\n\n **Refiner Model:** {selected_run.config['Refiner Model']}"
+                        content += "\n|Configuration|Value|"
+                        content += "\n|---|---|"
+                        content += f"\n|Prompt|{selected_run.config['Prompt']}|"
+                        content += f"\n|Negative Prompt|{selected_run.config['Negative Prompt']}|"
+                        content += f"\n|Performance|{selected_run.config['Performance']}|"
+                        content += f"\n|Resolution|{selected_run.config['Resolution']['width']}x{selected_run.config['Resolution']['height']}|"
+                        content += f"\n|Image Seed|{selected_run.config['Image Seed']}|"
+                        content += f"\n|Style|{selected_run.config['Style']}|"
+                        content += f"\n|Sharpness|{selected_run.config['Sharpness']}|"
+                        content += f"\n|Number of Images|{selected_run.config['Number of Images']}|"
+                        content += f"\n|Number of Steps|{selected_run.config['Number of Steps']}|"
+                        content += f"\n|Base Model|{selected_run.config['Base Model']}|"
+                        content += f"\n|Refiner Model|{selected_run.config['Refiner Model']}|"
+                        for k, v in selected_run.config['LoRA Weights'].items():
+                            content += f"\n|{k}|{v}|"
                         return content
                     
                     wandb_run_dropdown.change(fn=update_history_details, inputs=wandb_run_dropdown, outputs=history_details)
