@@ -19,6 +19,18 @@ except:
     IS_WANDB_INSTALLED = False
 
 
+def fetch_wandb_history():
+    project = os.environ["WANDB_PROJECT"]
+    entity = os.environ["WANDB_ENTITY"]
+    try:
+        api = wandb.Api()
+        runs = api.runs(f"{entity}/{project}")
+        runs = [run for run in runs if run.state == "finished" and run.job_type == "text-to-image"]
+        return project, entity, runs
+    except:
+        return project, entity, None
+
+
 def generate_clicked(*args):
     yield gr.update(interactive=False), \
         gr.update(visible=True, value=modules.html.make_progress_html(1, 'Processing text encoding ...')), \
@@ -44,24 +56,14 @@ def generate_clicked(*args):
                     gr.update(visible=False), \
                     gr.update(visible=True, value=product)
                 finished = True
+    gr.update(visible=True, value=product)
     return
-
-
-def refresh_history():
-    api = wandb.Api()
-    project = os.environ["WANDB_PROJECT"]
-    entity = os.environ["WANDB_ENTITY"]
-    runs = api.runs(f"{entity}/{project}")
-    runs = [run for run in runs if run.state == "finished" and run.job_type == "text-to-image"]
-    for run in runs:
-        with gr.Row():
-            run_url = f"https://wandb.ai/{entity}/{project}/runs/{run.id}"
-            gr.HTML(f"<a href=\"{run_url}\">{run.name}</a>")
 
 
 shared.gradio_root = gr.Blocks(title='Fooocus ' + fooocus_version.version, css=modules.html.css).queue()
 with shared.gradio_root:
     with gr.Row():
+        wandb_run_dropdown = None
         with gr.Column():
             progress_window = gr.Image(label='Preview', show_label=True, height=640, visible=False)
             progress_html = gr.HTML(value=modules.html.make_progress_html(32, 'Progress 32%'), visible=False, elem_id='progress-bar', elem_classes='progress-bar')
@@ -126,8 +128,39 @@ with shared.gradio_root:
             
             if IS_WANDB_INSTALLED:
                 with gr.Tab(label="History") as history_tab:
-                    refresh_history()
-
+                    project, entity, runs = fetch_wandb_history()
+                    run_name_to_id = {run.name: run.id for run in runs} if runs is not None else {}
+                    project_url = f"https://wandb.ai/{entity}/{project}"
+                    gr.Markdown(f"## Project: [{entity}/{project}]({project_url})")
+                    wandb_run_dropdown = gr.Dropdown(
+                        choices=[run.name for run in runs] if runs is not None else [],
+                        label="Past Experiments"
+                    )
+                    history_details = gr.Markdown()
+                    
+                    def update_history_details(run_name):
+                        selected_run = run_name_to_id[run_name]
+                        for run in runs:
+                            if run.id == selected_run:
+                                selected_run = run
+                                break
+                        content = f"### Experiment: [{run_name}](https://wandb.ai/{entity}/{project}/{run_name_to_id[run_name]}) ({str(selected_run.created_at)})"
+                        content += f"\n\n **Prompt:** {selected_run.config['Prompt']}"
+                        if selected_run.config['Negative Prompt'] != "":
+                            content += f"\n\n **Negative Prompt:** {selected_run.config['Negative Prompt']}"
+                        content += f"\n\n **Performance:** {selected_run.config['Performance']}"
+                        content += f"\n\n **Image Seed:** {selected_run.config['Image Seed']}"
+                        content += f"\n\n **Resolution:** {selected_run.config['Resolution']['width']}x{selected_run.config['Resolution']['height']}"
+                        content += f"\n\n **Style:** {selected_run.config['Style']}"
+                        content += f"\n\n **Sharpness:** {selected_run.config['Sharpness']}"
+                        content += f"\n\n **Number of Images:** {selected_run.config['Number of Images']}"
+                        content += f"\n\n **Number of Steps:** {selected_run.config['Number of Steps']}"
+                        content += f"\n\n **Base Model:** {selected_run.config['Base Model']}"
+                        content += f"\n\n **Refiner Model:** {selected_run.config['Refiner Model']}"
+                        return content
+                    
+                    wandb_run_dropdown.change(fn=update_history_details, inputs=wandb_run_dropdown, outputs=history_details)
+        
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, right_col)
         ctrls = [
             prompt, negative_prompt, style_selction,
