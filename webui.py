@@ -139,6 +139,8 @@ with shared.gradio_root:
                     history_details = gr.Markdown()
                     
                     def update_history_details(run_name):
+                        project, entity, runs = fetch_wandb_history()
+                        run_name_to_id = {run.name: run.id for run in runs} if runs is not None else {}
                         selected_run = run_name_to_id[run_name]
                         for run in runs:
                             if run.id == selected_run:
@@ -162,7 +164,17 @@ with shared.gradio_root:
                             content += f"\n|{k}|{v}|"
                         return content
                     
-                    wandb_run_dropdown.change(fn=update_history_details, inputs=wandb_run_dropdown, outputs=history_details)
+                    
+                    def update_wandb_dropdown():
+                        _, _, runs = fetch_wandb_history()
+                        return gr.Dropdown.update(
+                            choices=[run.name for run in runs] if runs is not None else [],
+                            label="Past Experiments"
+                        )
+                        
+                    
+                    wandb_run_dropdown.change(fn=update_history_details, inputs=wandb_run_dropdown, outputs=history_details)\
+                        .then(fn=update_wandb_dropdown, outputs=wandb_run_dropdown)
         
         advanced_checkbox.change(lambda x: gr.update(visible=x), advanced_checkbox, right_col)
         ctrls = [
