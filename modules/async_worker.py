@@ -78,7 +78,7 @@ def worker():
                 "Negative Prompt": negative_prompt,
                 "Style": style_selction,
                 "Performance": performance_selction,
-                "Resolution": {"windth": width, "height": height},
+                "Resolution": {"width": width, "height": height},
                 "Number of Images": image_number,
                 "Number of Steps": steps,
                 "Image Seed": image_seed,
