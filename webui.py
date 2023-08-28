@@ -149,7 +149,7 @@ with shared.gradio_root:
                             if run.id == selected_run:
                                 selected_run = run
                                 break
-                        content = f"### Experiment: [{run_name}](https://wandb.ai/{entity}/{project}/{run_name_to_id[run_name]}) ({str(selected_run.created_at)})"
+                        content = f"### Experiment: [{run_name}](https://wandb.ai/{entity}/{project}/runs/{run_name_to_id[run_name]}) ({str(selected_run.created_at)})"
                         content += "\n|Configuration|Value|"
                         content += "\n|---|---|"
                         content += f"\n|Prompt|{selected_run.config['Prompt']}|"
