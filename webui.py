@@ -15,7 +15,7 @@ try:
     import os
     import wandb
     
-    USE_WANDB_INTEGRATION = os.environ.get("WANDB_PROJECT") is not None and os.environ.get("WANDB_ENTITY")
+    USE_WANDB_INTEGRATION = os.environ.get("WANDB_PROJECT") is not None and os.environ.get("WANDB_ENTITY") is not None
 except:
     USE_WANDB_INTEGRATION = False
 
