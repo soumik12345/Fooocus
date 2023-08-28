@@ -18,13 +18,13 @@ def worker():
     from modules.sdxl_styles import apply_style, aspect_ratios
     from modules.private_logger import log
     
-    IS_WANDB_INSTALLED = False
+    USE_WANDB_INTEGRATION = False
     try:
         import wandb
         from modules.private_logger import log_to_wandb
-        IS_WANDB_INSTALLED = True
+        USE_WANDB_INTEGRATION = True
     except:
-        IS_WANDB_INSTALLED = False
+        USE_WANDB_INTEGRATION = False
 
     try:
         async_gradio_app = shared.gradio_root
@@ -72,7 +72,7 @@ def worker():
 
         all_steps = steps * image_number
         
-        if IS_WANDB_INSTALLED:
+        if USE_WANDB_INTEGRATION:
             config_dict = {
                 "Prompt": prompt,
                 "Negative Prompt": negative_prompt,
@@ -101,7 +101,7 @@ def worker():
                 y)])
         
         wandb_table = None
-        if IS_WANDB_INSTALLED:
+        if USE_WANDB_INTEGRATION:
             wandb_table = wandb.Table(columns=["Prompt", "Negative Prompt", "Image"])
 
         for i in range(image_number):
@@ -124,7 +124,7 @@ def worker():
                         d.append((f'LoRA [{n}] weight', w))
                 log(x, d)
                 
-                if IS_WANDB_INSTALLED:
+                if USE_WANDB_INTEGRATION:
                     wandb_table = log_to_wandb(x, d, wandb_table)
 
             seed += 1
@@ -132,7 +132,7 @@ def worker():
 
         outputs.append(['results', results])
         
-        if IS_WANDB_INSTALLED:
+        if USE_WANDB_INTEGRATION:
             wandb.log({"Generation-Table": wandb_table})
             wandb.finish()
 
