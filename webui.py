@@ -10,13 +10,14 @@ import modules.async_worker as worker
 
 from modules.sdxl_styles import style_keys, aspect_ratios
 
-IS_WANDB_INSTALLED = False
+USE_WANDB_INTEGRATION = False
 try:
     import os
     import wandb
-    IS_WANDB_INSTALLED = True
+    
+    USE_WANDB_INTEGRATION = os.environ.get("WANDB_PROJECT") is not None and os.environ.get("WANDB_ENTITY")
 except:
-    IS_WANDB_INSTALLED = False
+    USE_WANDB_INTEGRATION = False
 
 
 def fetch_wandb_history():
@@ -126,7 +127,7 @@ with shared.gradio_root:
 
                 model_refresh.click(model_refresh_clicked, [], [base_model, refiner_model] + lora_ctrls)
             
-            if IS_WANDB_INSTALLED:
+            if USE_WANDB_INTEGRATION:
                 with gr.Tab(label="History") as history_tab:
                     project, entity, runs = fetch_wandb_history()
                     run_name_to_id = {run.name: run.id for run in runs} if runs is not None else {}
